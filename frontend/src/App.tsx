@@ -13,9 +13,21 @@ function App() {
     //     console.error('Error fetching data:', error);
     //   }
     // };
+
+    // const fetchData = async () => {
+    //   try {
+    //     const response = await axios.get('http://127.0.0.1:5000/predict');
+    //     console.log(response.data);
+    //   } catch (error) {
+    //     console.error('Error fetching data:', error);
+    //   }
+    // };
+
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:5000/predict');
+        const response = await axios.post('http://127.0.0.1:5000/predict', {
+          data: "You suck!"
+        });
         console.log(response.data);
       } catch (error) {
         console.error('Error fetching data:', error);
