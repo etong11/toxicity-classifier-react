@@ -4,19 +4,36 @@ import './App.css';
 import axios from 'axios';
 
 const labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate'];
+const textExamples = [
+  'This is an example of toxic behavior.',
+  'This is an example of severe toxic behavior.',
+  'This is an example of obscene language.',
+  'This is an example of a threat.',
+  'This is an example of an insult.',
+  'This is an example of identity hate.',
+];
 
 function App(){
-
-  const [activeTab, setActiveTab] = useState<string>('toggles');
-  const [toggleStates, setToggleStates] = useState<boolean[]>(
-    Array(5).fill(false) // Initial state for 5 toggles
-  );
   const  [value, setValue] = useState("Sentence");
+  const [activeTab, setActiveTab] = useState<string>('toggles');
+  const [toggleStates, setToggleStates] = useState<number[]>(
+    Array(labels.length).fill(0) // Initial state for each toggle (0 is off)
+  );
+  const [rowStates, setRowStates] = useState<number[]>(
+    Array(labels.length).fill(0) // Initial state for table row toggles
+  );
 
   const handleToggleChange = (index: number) => {
     const updatedToggles = [...toggleStates];
-    updatedToggles[index] = !updatedToggles[index];
+    updatedToggles[index] = updatedToggles[index] === 0 ? 1 : 0; // Toggle between 1 and 0
     setToggleStates(updatedToggles);
+    console.log(`Label: ${labels[index]}, Value: ${updatedToggles[index]}`); // Debug: Log the label and value
+  };
+
+  const handleRowToggleChange = (index: number) => {
+    const updatedRows = [...rowStates];
+    updatedRows[index] = updatedRows[index] === 0 ? 1 : 0; // Toggle between 1 and 0
+    setRowStates(updatedRows);
   };
 
   const renderTabContent = () =>{
@@ -28,7 +45,7 @@ function App(){
               <label className="switch">
                 <input
                   type="checkbox"
-                  checked={toggleStates[index]}
+                  checked={toggleStates[index] === 1}
                   onChange={() => handleToggleChange(index)}
                 />
                 <span className="slider"></span>
@@ -39,7 +56,31 @@ function App(){
         </div>
       );
     } else {
-      return <div>This tab is blank.</div>;
+      return (
+        <table className="toxicity-table">
+          <thead>
+            <tr>
+              <th>Toxicity Label</th>
+              <th>Text Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            {labels.map((label, index) => (
+              <tr key={index}>
+                <td>
+                  <button
+                    onClick={() => handleRowToggleChange(index)}
+                    className={`row-toggle ${rowStates[index] === 1 ? 'active' : ''}`}
+                  >
+                    {label}
+                  </button>
+                </td>
+                <td>{textExamples[index]}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
     }
   }
 
@@ -89,35 +130,35 @@ function App(){
     //   </header>
     // </div>
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px' }}>
-    <div style={{ display: 'flex', marginBottom: '20px' }}>
-      <button
-        onClick={() => setActiveTab('toggles')}
-        style={{
-          padding: '10px',
-          cursor: 'pointer',
-          backgroundColor: activeTab === 'toggles' ? '#ddd' : '#fff',
-          border: '1px solid #ccc',
-          marginRight: '10px',
-        }}
-      >
-        Toggles
-      </button>
-      <button
-        onClick={() => setActiveTab('blank')}
-        style={{
-          padding: '10px',
-          cursor: 'pointer',
-          backgroundColor: activeTab === 'blank' ? '#ddd' : '#fff',
-          border: '1px solid #ccc',
-        }}
-      >
-        Blank Tab
-      </button>
+      <div style={{ display: 'flex', marginBottom: '20px' }}>
+        <button
+          onClick={() => setActiveTab('toggles')}
+          style={{
+            padding: '10px',
+            cursor: 'pointer',
+            backgroundColor: activeTab === 'toggles' ? '#ddd' : '#fff',
+            border: '1px solid #ccc',
+            marginRight: '10px',
+          }}
+        >
+          Toggles
+        </button>
+        <button
+          onClick={() => setActiveTab('blank')}
+          style={{
+            padding: '10px',
+            cursor: 'pointer',
+            backgroundColor: activeTab === 'blank' ? '#ddd' : '#fff',
+            border: '1px solid #ccc',
+          }}
+        >
+          Examples
+        </button>
+      </div>
+      <div style={{ border: '1px solid #ccc', padding: '20px' }}>
+        {renderTabContent()}
+      </div>
     </div>
-    <div style={{ border: '1px solid #ccc', padding: '20px' }}>
-      {renderTabContent()}
-    </div>
-  </div>
   );
 }
 
