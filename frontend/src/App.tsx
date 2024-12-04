@@ -19,15 +19,26 @@ function App(){
   const [toggleStates, setToggleStates] = useState<number[]>(
     Array(labels.length).fill(0) // Initial state for each toggle (0 is off)
   );
+  const [activeText, setActiveText] = useState<string>(''); // To track active example text
+
   const [rowStates, setRowStates] = useState<number[]>(
     Array(labels.length).fill(0) // Initial state for table row toggles
   );
+
+
 
   const handleToggleChange = (index: number) => {
     const updatedToggles = [...toggleStates];
     updatedToggles[index] = updatedToggles[index] === 0 ? 1 : 0; // Toggle between 1 and 0
     setToggleStates(updatedToggles);
     console.log(`Label: ${labels[index]}, Value: ${updatedToggles[index]}`); // Debug: Log the label and value
+
+    // Update the active text based on the toggle
+    if (updatedToggles[index] === 1) {
+      setActiveText(textExamples[index]);
+    } else if (activeText === textExamples[index]) {
+      setActiveText(''); // Clear the text if the currently displayed example is toggled off
+    }
   };
 
   const handleRowToggleChange = (index: number) => {
@@ -45,7 +56,7 @@ function App(){
               <label className="switch">
                 <input
                   type="checkbox"
-                  checked={toggleStates[index] === 1}
+                  checked={toggleStates[index] === 1} // Convert number to boolean
                   onChange={() => handleToggleChange(index)}
                 />
                 <span className="slider"></span>
@@ -53,6 +64,23 @@ function App(){
               <span className="label">{label}</span>
             </div>
           ))}
+          <div className="example-textbox">
+            <textarea
+              value={activeText}
+              readOnly
+              rows={4}
+              style={{
+                width: '100%',
+                marginTop: '20px',
+                padding: '10px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                fontFamily: 'Arial, sans-serif',
+                fontSize: '14px',
+              }}
+              placeholder="Toggle a label to see an example sentence."
+            />
+          </div>
         </div>
       );
     } else {
