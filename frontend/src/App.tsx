@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import axios from 'axios';
 
 const labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate'];
-const textExamples = [
-  'This is an example of toxic behavior.',
-  'This is an example of severe toxic behavior.',
-  'This is an example of obscene language.',
-  'This is an example of a threat.',
-  'This is an example of an insult.',
-  'This is an example of identity hate.',
-];
+// const textExamples = [
+//   'This is an example of toxic behavior.',
+//   'This is an example of severe toxic behavior.',
+//   'This is an example of obscene language.',
+//   'This is an example of a threat.',
+//   'This is an example of an insult.',
+//   'This is an example of identity hate.',
+// ];
 
 function App() {
   const [value, setValue] = useState("Sentence");
@@ -22,6 +23,91 @@ function App() {
     Array(labels.length).fill(0)
   );
   const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [isOnboarding, setIsOnboarding] = useState<boolean>(true);
+  const [prediction, setPrediction] = useState<string>('');
+  const [isTraining, setIsTraining] = useState<boolean>(false);
+  const [textExamples, setExamples] = useState<string[]>([]);
+
+  const getTestExamples = async () => {
+    try {
+      const response = await axios.get('http://127.0.0.1:5000/getExamples');
+      const responseData = response.data;
+      console.log("responseData", responseData);
+      setExamples(responseData.examples);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  }
+
+  const setPreferences = async () => {
+    try {
+      setIsTraining(true);
+      const response = await axios.post('http://127.0.0.1:5000/setPreferences', {
+        preferences: toggleStates,
+      });
+      // const responseData = await response.json();
+      const responseData = response.data;
+      console.log("responseData", responseData);
+      setValue(responseData);
+      setIsOnboarding(false);
+      setIsTraining(false);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  }
+
+  const getPrediction = async () => {
+    try {
+      console.log("activeText", activeText);
+      const response = await axios.post('http://127.0.0.1:5000/predict', {
+        data: activeText,
+      });
+      const responseData = response.data;
+      console.log("responseData", responseData);
+      if (responseData != null) {
+        if (responseData.predicted === 0) {
+          setPrediction('The text is not toxic.');
+        } else if (responseData.predicted === 1) {
+          setPrediction('The text is toxic.');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  }
+
+  // Popup while model is being trained
+  const renderTrainingPopup = () => {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000
+      }}>
+        <div style={{
+          backgroundColor: 'white',
+          padding: '20px',
+          borderRadius: '10px',
+          width: '1000px',
+          height: '350px',
+          maxWidth: '90%',
+          maxHeight: '90%'
+        }}>
+          <h2>Training Model...</h2>
+          <p>
+          The model is currently being trained based on your preferences. Please wait.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Modify the setActiveTab to open modal when 'blank' tab is selected
   const handleTabChange = (tab: string) => {
@@ -50,27 +136,37 @@ function App() {
     setRowStates(updatedRows);
   };
 
+  const renderToggleOnboarding = () => {
+    return (
+      <div>
+      {labels.map((label, index) => (
+        <div key={index} className="toggle-row">
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={toggleStates[index] === 1}
+              onChange={() => handleToggleChange(index)}
+            />
+            <span className="slider"></span>
+          </label>
+          <span className="label">{label}</span>
+        </div>
+      ))}
+      <button onClick={setPreferences}>Set Preferences</button>
+      </div>
+    )
+  }
+
   const renderTabContent = () => {
     if (activeTab === 'toggles') {
       return (
         <div>
-          {labels.map((label, index) => (
-            <div key={index} className="toggle-row">
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={toggleStates[index] === 1}
-                  onChange={() => handleToggleChange(index)}
-                />
-                <span className="slider"></span>
-              </label>
-              <span className="label">{label}</span>
-            </div>
-          ))}
+          {isTraining && renderTrainingPopup()}
+          {renderToggleOnboarding()}
           <div className="example-textbox">
             <textarea
               value={activeText}
-              readOnly
+              onChange={(e) => setActiveText(e.target.value)}
               rows={4}
               style={{
                 width: '100%',
@@ -83,6 +179,11 @@ function App() {
               }}
               placeholder="Toggle a label to see an example sentence."
             />
+          </div>
+          <button onClick={getPrediction}>Get Prediction</button>
+          <div className="prediction">
+            <h2>Prediction</h2>
+            <p>{prediction}</p>
           </div>
         </div>
       );
@@ -179,24 +280,25 @@ function App() {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('http://127.0.0.1:5000/predict', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ data: "You suck!" })
-        });
-        const responseData = await response.json();
-        console.log(responseData);
-        setValue(responseData);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
+    getTestExamples();
+    // const fetchData = async () => {
+    //   try {
+    //     const response = await fetch('http://127.0.0.1:5000/predict', {
+    //       method: 'POST',
+    //       headers: {
+    //         'Content-Type': 'application/json',
+    //       },
+    //       body: JSON.stringify({ data: "You suck!" })
+    //     });
+    //     const responseData = await response.json();
+    //     console.log(responseData);
+    //     setValue(responseData);
+    //   } catch (error) {
+    //     console.error('Error fetching data:', error);
+    //   }
+    // };
 
-    fetchData();
+    // fetchData();
   }, []);
 
   return (
