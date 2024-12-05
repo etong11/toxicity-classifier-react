@@ -3,14 +3,6 @@ import './App.css';
 import axios from 'axios';
 
 const labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate'];
-// const textExamples = [
-//   'This is an example of toxic behavior.',
-//   'This is an example of severe toxic behavior.',
-//   'This is an example of obscene language.',
-//   'This is an example of a threat.',
-//   'This is an example of an insult.',
-//   'This is an example of identity hate.',
-// ];
 
 function App() {
   const [value, setValue] = useState("Sentence");
@@ -42,16 +34,17 @@ function App() {
   const setPreferences = async () => {
     try {
       setIsTraining(true);
-      var inputPreferences = rowStates;
-      if (activeTab === 'toggles') {
-        inputPreferences = toggleStates;
-      }
+      // var inputPreferences = rowStates;
+      // if (activeTab === 'toggles') {
+      //   inputPreferences = toggleStates;
+      // }
+      const inputPreferences = toggleStates;
       const response = await axios.post('http://127.0.0.1:5000/setPreferences', {
         preferences: inputPreferences,
       });
       // const responseData = await response.json();
       const responseData = response.data;
-      console.log("responseData", responseData);
+      console.log("setPreferences", responseData);
       setValue(responseData);
       setIsOnboarding(false);
       setIsTraining(false);
@@ -70,9 +63,9 @@ function App() {
       console.log("responseData", responseData);
       if (responseData != null) {
         if (responseData.predicted === 0) {
-          setPrediction('The text is not toxic.');
+          setPrediction('not toxic');
         } else if (responseData.predicted === 1) {
-          setPrediction('The text is toxic.');
+          setPrediction('toxic');
         }
       }
     } catch (error) {
@@ -99,10 +92,11 @@ function App() {
           backgroundColor: 'white',
           padding: '20px',
           borderRadius: '10px',
-          width: '1000px',
-          height: '350px',
+          // width: '1000px',
+          // height: '350px',
           maxWidth: '90%',
-          maxHeight: '90%'
+          maxHeight: '90%',
+          textAlign: 'center'
         }}>
           <h2>Training Model...</h2>
           <p>
@@ -127,11 +121,11 @@ function App() {
     setToggleStates(updatedToggles);
     console.log(`Label: ${labels[index]}, Value: ${updatedToggles[index]}`);
 
-    if (updatedToggles[index] === 1) {
-      setActiveText(textExamples[index]);
-    } else if (activeText === textExamples[index]) {
-      setActiveText('');
-    }
+    // if (updatedToggles[index] === 1) {
+    //   setActiveText(textExamples[index]);
+    // } else if (activeText === textExamples[index]) {
+    //   setActiveText('');
+    // }
   };
 
   const handleRowToggleChange = (index: number) => {
@@ -171,15 +165,16 @@ function App() {
               style={{
                 width: '100%',
                 marginTop: '20px',
+                marginBottom: '20px',
                 padding: '10px',
                 border: '1px solid #ccc',
                 borderRadius: '4px',
                 fontFamily: 'Arial, sans-serif',
                 fontSize: '14px',
               }}
-              placeholder="Toggle a label to see an example sentence."
             />
           </div>
+
           <button onClick={getPrediction}>Get Prediction</button>
         </div>
     )
@@ -187,10 +182,21 @@ function App() {
 
   const renderPredictionOutput = () => {
     return (
-    <div className="prediction">
-            <h2>Prediction</h2>
-            <p>{prediction}</p>
-          </div>
+    <div className="prediction" id={`${prediction === 'toxic' ? prediction : 'not-toxic'}`}>
+      <p>Based on your content moderation preferences, our model has determined that the input text is: 
+      <b> {prediction}</b>.
+      </p>
+      {prediction === 'toxic' && (
+        <p>
+          You would not be shown this text in your comment section/feed.
+        </p>
+      )}
+      {prediction === 'not toxic' && (
+        <p>
+          You would be shown this text in your comment section/feed.
+        </p>
+      )}
+    </div>
     )
   }
 
@@ -198,17 +204,26 @@ function App() {
     if (activeTab === 'toggles') {
       return (
         <div>
-          {isTraining && renderTrainingPopup()}
+          <h2>Set Content Moderation Preferences</h2>
+          <p>
+            Please select the types of toxic content you would like to not see.
+          </p>
           {renderToggleOnboarding()}
-          <button onClick={setPreferences}>Set Preferences</button>
+          <button onClick={setPreferences}>Save Preferences</button>
+          
+          <hr style={{ margin: '20px 0' }} />
+
+          <h2>Test Model</h2>
+          <p>Enter any comment in the textbox below to see if the model that has been
+            trained on your preferences will show it to you or not.
+          </p>
           {renderTextbox()}
-          {renderPredictionOutput()}
+          {prediction != "" && renderPredictionOutput()}
         </div>
       );
     } else {
       return (
         <div>
-        {isTraining && renderTrainingPopup()}
         <table className="toxicity-table">
           <thead>
             <tr>
@@ -232,7 +247,7 @@ function App() {
             ))}
           </tbody>
         </table>
-        <button onClick={setPreferences}>Set Preferences</button>
+        <button onClick={setPreferences}>Save Preferences</button>
         {renderTextbox()}
         {renderPredictionOutput()}
         </div>
@@ -311,7 +326,7 @@ function App() {
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px' }}>
       {/* Modal Component */}
       <Modal />
-
+      {isTraining && renderTrainingPopup()}
       <div style={{ display: 'flex', marginBottom: '20px' }}>
         <button
           onClick={() => handleTabChange('toggles')}

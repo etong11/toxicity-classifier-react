@@ -6,8 +6,13 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
 
+from sklearn.metrics import accuracy_score, cohen_kappa_score, f1_score, classification_report
+from sklearn.model_selection import GridSearchCV
+
 app = Flask(__name__)
 CORS(app)
+# CORS(app, resources={r"/*": {"origins": "*"}})
+# CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 @app.route("/", methods=["GET"])
 def hello_world():
@@ -19,11 +24,12 @@ labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate
 df['toxic_preference'] = 0
 y = None
 model = None
+preferences_num = None
 
 count_vect = CountVectorizer()
 tfidf_transformer = TfidfTransformer()
 
-# @app.route("/train", methods=["POST"])
+@app.route("/train", methods=["POST"])
 def train():
     global model
     if y is None:
@@ -37,7 +43,44 @@ def train():
     # Training the model
     model = MultinomialNB().fit(X_train_tfidf, y)
 
+    # X_train_counts = count_vect.fit_transform(X)
+    # X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
+
+    # # Hyperparameter tuning using Grid Search
+    # param_grid = {
+    #     'alpha': [0.01, 0.1, 1, 10, 100]
+    # }
+    # grid_search = GridSearchCV(MultinomialNB(), param_grid, cv=5, scoring='f1')
+    # grid_search.fit(X_train_tfidf, y)
+    # model = grid_search.best_estimator_
+
+    # predicted = model.predict(X_train_tfidf)
+    # error_rate = (y != predicted).mean()
+    # print("Error rate: ", error_rate)
+    # print("classification_report: ", classification_report(y, predicted))
+
+    # df_test = pd.read_csv('data/test.csv')
+    # df_test_labels = pd.read_csv('data/test_labels.csv')
+    # df_test['toxic_preference'] = 0
+
+    # preferences_bool = [bool(preference) for preference in preferences_num]
+    # preferences = [labels[i] for i in range(len(labels)) if preferences_bool[i]]
+    # df_test['toxic_preference'] = df_test_labels[preferences].any(axis=1).astype(int)
+
+    # X_test = df_test['comment_text']
+    # y_test = df_test['toxic_preference']
+
+    # X_test_counts = count_vect.transform(X_test)
+    # X_test_tfidf = tfidf_transformer.transform(X_test_counts)
+    # predicted = model.predict(X_test_tfidf)
+
+    # error_rate = (y_test != predicted).mean()
+    # print("Error rate: ", error_rate)
+    # print("classification_report: ", classification_report(y_test, predicted))
+    # print("accuracy_score: ", accuracy_score(y_test, predicted))
+
     return jsonify({"message": "Model trained"})
+# , "error_rate": float(error_rate)
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -58,7 +101,7 @@ def predict():
 
 @app.route("/setPreferences", methods=["POST"])
 def setPreferences():
-    global df, y
+    global df, y, preferences_num
     # Set the y value to match the preferences
     preferences_num = request.json['preferences']
 
@@ -87,6 +130,25 @@ def getExamples():
     # print("these samples")
     # print(samples)
     return jsonify({"examples": samples})
+
+# @app.route("/generateErrorRate", methods=["GET"])
+# def generateErrorRate():
+#     if model is None:
+#         return jsonify({"error": "Model not trained yet"})
+    
+#     df_test = pd.read_csv('data/test.csv')
+#     df_test_labels = pd.read_csv('data/test_labels.csv')
+    
+#     X_test = df_test['comment_text']
+#     y_test = df_test_labels['toxic']
+
+#     X_test_counts = count_vect.transform(X_test)
+#     X_test_tfidf = tfidf_transformer.transform(X_test_counts)
+#     predicted = clf.predict(X_test_tfidf)
+
+#     error_rate = (y_test != predicted).mean()
+
+#     return jsonify({"error_rate": error_rate})
 
 if __name__ == "__main__":
     app.run(debug=True)

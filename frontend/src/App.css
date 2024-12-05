@@ -176,6 +176,14 @@ input:checked + .slider:before {
   color: white;
 }
 
+.prediction#toxic b {
+  color: red;
+}
+
+.prediction#not-toxic b {
+  color: green;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
