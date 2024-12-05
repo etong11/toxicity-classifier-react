@@ -1,7 +1,5 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
-
-import axios from 'axios';
 
 const labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate'];
 const textExamples = [
@@ -13,41 +11,46 @@ const textExamples = [
   'This is an example of identity hate.',
 ];
 
-function App(){
-  const  [value, setValue] = useState("Sentence");
+function App() {
+  const [value, setValue] = useState("Sentence");
   const [activeTab, setActiveTab] = useState<string>('toggles');
   const [toggleStates, setToggleStates] = useState<number[]>(
-    Array(labels.length).fill(0) // Initial state for each toggle (0 is off)
+    Array(labels.length).fill(0)
   );
-  const [activeText, setActiveText] = useState<string>(''); // To track active example text
-
+  const [activeText, setActiveText] = useState<string>('');
   const [rowStates, setRowStates] = useState<number[]>(
-    Array(labels.length).fill(0) // Initial state for table row toggles
+    Array(labels.length).fill(0)
   );
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
 
-
+  // Modify the setActiveTab to open modal when 'blank' tab is selected
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (tab === 'blank') {
+      setModalOpen(true);
+    }
+  };
 
   const handleToggleChange = (index: number) => {
     const updatedToggles = [...toggleStates];
-    updatedToggles[index] = updatedToggles[index] === 0 ? 1 : 0; // Toggle between 1 and 0
+    updatedToggles[index] = updatedToggles[index] === 0 ? 1 : 0;
     setToggleStates(updatedToggles);
-    console.log(`Label: ${labels[index]}, Value: ${updatedToggles[index]}`); // Debug: Log the label and value
+    console.log(`Label: ${labels[index]}, Value: ${updatedToggles[index]}`);
 
-    // Update the active text based on the toggle
     if (updatedToggles[index] === 1) {
       setActiveText(textExamples[index]);
     } else if (activeText === textExamples[index]) {
-      setActiveText(''); // Clear the text if the currently displayed example is toggled off
+      setActiveText('');
     }
   };
 
   const handleRowToggleChange = (index: number) => {
     const updatedRows = [...rowStates];
-    updatedRows[index] = updatedRows[index] === 0 ? 1 : 0; // Toggle between 1 and 0
+    updatedRows[index] = updatedRows[index] === 0 ? 1 : 0;
     setRowStates(updatedRows);
   };
 
-  const renderTabContent = () =>{
+  const renderTabContent = () => {
     if (activeTab === 'toggles') {
       return (
         <div>
@@ -56,7 +59,7 @@ function App(){
               <label className="switch">
                 <input
                   type="checkbox"
-                  checked={toggleStates[index] === 1} // Convert number to boolean
+                  checked={toggleStates[index] === 1}
                   onChange={() => handleToggleChange(index)}
                 />
                 <span className="slider"></span>
@@ -110,30 +113,84 @@ function App(){
         </table>
       );
     }
-  }
+  };
 
+  // Modal component
+  const Modal = () => {
+    if (!modalOpen) return null;
 
-  function handleSubmit(e: { preventDefault: () => void; target: any; }){
-    e.preventDefault();
-
-    const form = e.target;
-    const formData = new FormData(form);
-   
-    const formJson = Object.fromEntries(formData.entries());
-    console.log(formJson);
-  }
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000
+      }}>
+        <div style={{
+          backgroundColor: 'white',
+          padding: '20px',
+          borderRadius: '10px',
+          width: '1000px',
+          height: '350px',
+          maxWidth: '90%',
+          maxHeight: '90%'
+        }}>
+          <h2>Toxicity Examples</h2>
+          <p>
+          This section is dedicated to showcasing examples of toxic language, 
+          categorized into various types such as threats, insults, identity-based hate, 
+          and more. These examples are provided to help you better understand the nature 
+          and nuances of toxic communication.
+          </p>
+          <p>
+          Please note that while these examples are representative, 
+          they are intended solely for educational and awareness purposes. Reviewing these examples will 
+          provide insights into how language can manifest in harmful ways, aiding in identifying and 
+          addressing toxicity effectively.
+          </p>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginTop: '20px'
+          }}>
+            <button 
+              onClick={() => setModalOpen(false)}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#007bff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer'
+              }}
+            >
+              Agree
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   useEffect(() => {
-
-
-
     const fetchData = async () => {
       try {
-        const response = await axios.post('http://127.0.0.1:5000/predict', {
-          data: "You suck!"
+        const response = await fetch('http://127.0.0.1:5000/predict', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ data: "You suck!" })
         });
-        console.log(response.data);
-        setValue(response.data);
+        const responseData = await response.json();
+        console.log(responseData);
+        setValue(responseData);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -143,24 +200,13 @@ function App(){
   }, []);
 
   return (
-    // <div className="App">
-    //   <header className="App-header">
-    //     <form method="post" onSubmit={handleSubmit}>
-    //       <label>
-    //         Enter test you wish to identify: <input name = "myInput" defaultValue="Enter a toxic sentence here" />
-    //       </label>
-    //       <button type="submit">Submit form</button>
-    //     </form>
-    //     <p>
-    //       Response.data 
-    //       <pre>{JSON.stringify(value, null, 2)}</pre>
-    //     </p>
-    //   </header>
-    // </div>
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px' }}>
+      {/* Modal Component */}
+      <Modal />
+
       <div style={{ display: 'flex', marginBottom: '20px' }}>
         <button
-          onClick={() => setActiveTab('toggles')}
+          onClick={() => handleTabChange('toggles')}
           style={{
             padding: '10px',
             cursor: 'pointer',
@@ -172,7 +218,7 @@ function App(){
           Toggles
         </button>
         <button
-          onClick={() => setActiveTab('blank')}
+          onClick={() => handleTabChange('blank')}
           style={{
             padding: '10px',
             cursor: 'pointer',
