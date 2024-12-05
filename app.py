@@ -23,7 +23,7 @@ model = None
 count_vect = CountVectorizer()
 tfidf_transformer = TfidfTransformer()
 
-@app.route("/train", methods=["POST"])
+# @app.route("/train", methods=["POST"])
 def train():
     global model
     if y is None:
@@ -67,7 +67,8 @@ def setPreferences():
     df['toxic_preference'] = df[preferences].any(axis=1).astype(int)
     y = df['toxic_preference']
 
-    return jsonify({"message": "Preferences set"})
+    # return jsonify({"message": "Preferences set"})
+    return train()
 
 @app.route("/getExamples", methods=["GET"])
 def getExamples():
