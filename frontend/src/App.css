@@ -150,6 +150,7 @@ input:checked + .slider:before {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .toxicity-table th,
@@ -161,6 +162,11 @@ input:checked + .slider:before {
 
 .toxicity-table th {
   background-color: #f9f9f9;
+}
+
+.toxicity-table th:first-child,
+.toxicity-table td:first-child {
+  width: 100px;
 }
 
 .row-toggle {
@@ -176,12 +182,35 @@ input:checked + .slider:before {
   color: white;
 }
 
+.row-toggle:hover {
+  background-color: #95d596;
+}
+
 .prediction#toxic b {
   color: red;
 }
 
 .prediction#not-toxic b {
   color: green;
+}
+
+.general, .button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.disagree, .button {
+  padding: 10px 20px;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: #dc3545;
+  margin-left: 10px;
 }
 
 @keyframes App-logo-spin {

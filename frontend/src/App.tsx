@@ -3,6 +3,13 @@ import './App.css';
 import axios from 'axios';
 
 const labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate'];
+// const descriptions = ["General toxic behavior",
+//   "Severe toxic behavior",
+//   "Obscene language",
+//   "Threatening language",
+//   "Insulting language",
+//   "Identity-based hate speech"
+// ];
 
 function App() {
   const [value, setValue] = useState("Sentence");
@@ -34,11 +41,10 @@ function App() {
   const setPreferences = async () => {
     try {
       setIsTraining(true);
-      // var inputPreferences = rowStates;
-      // if (activeTab === 'toggles') {
-      //   inputPreferences = toggleStates;
-      // }
-      const inputPreferences = toggleStates;
+      var inputPreferences = rowStates;
+      if (activeTab === 'toggles') {
+        inputPreferences = toggleStates;
+      }
       const response = await axios.post('http://127.0.0.1:5000/setPreferences', {
         preferences: inputPreferences,
       });
@@ -110,6 +116,9 @@ function App() {
   // Modify the setActiveTab to open modal when 'blank' tab is selected
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
+    setIsOnboarding(true);
+    setPrediction('');
+
     if (tab === 'blank') {
       setModalOpen(true);
     }
@@ -148,6 +157,7 @@ function App() {
             <span className="slider"></span>
           </label>
           <span className="label">{label}</span>
+          {/* <span style={{ fontSize: '12px', color: '#666' }}>{descriptions[index]}</span> */}
         </div>
       ))}
       </div>
@@ -157,6 +167,10 @@ function App() {
   const renderTextbox = () => {
     return (
       <div>
+      <h2>Test Model</h2>
+        <p>Enter any comment in the textbox below to see if the model that has been
+          trained on your preferences will show it to you or not.
+        </p>
       <div className="example-textbox">
             <textarea
               value={activeText}
@@ -171,11 +185,12 @@ function App() {
                 borderRadius: '4px',
                 fontFamily: 'Arial, sans-serif',
                 fontSize: '14px',
+                boxSizing: 'border-box'
               }}
             />
           </div>
 
-          <button onClick={getPrediction}>Get Prediction</button>
+          <button className="general" onClick={getPrediction}>Get Prediction</button>
         </div>
     )
   }
@@ -209,14 +224,10 @@ function App() {
             Please select the types of toxic content you would like to not see.
           </p>
           {renderToggleOnboarding()}
-          <button onClick={setPreferences}>Save Preferences</button>
+          <button className="general" onClick={setPreferences}>Save Preferences</button>
           
           <hr style={{ margin: '20px 0' }} />
 
-          <h2>Test Model</h2>
-          <p>Enter any comment in the textbox below to see if the model that has been
-            trained on your preferences will show it to you or not.
-          </p>
           {renderTextbox()}
           {prediction != "" && renderPredictionOutput()}
         </div>
@@ -224,6 +235,11 @@ function App() {
     } else {
       return (
         <div>
+        <h2>Set Content Moderation Preferences</h2>
+        <p>
+          Examples of each category of toxic language from the dataset that the model will be trained on are shown below.
+          Please select the types of toxic content you would like to not see.
+        </p>
         <table className="toxicity-table">
           <thead>
             <tr>
@@ -247,13 +263,23 @@ function App() {
             ))}
           </tbody>
         </table>
-        <button onClick={setPreferences}>Save Preferences</button>
+        <button className="general" onClick={setPreferences}>Save Preferences</button>
         {renderTextbox()}
-        {renderPredictionOutput()}
+        {prediction != "" && renderPredictionOutput()}
         </div>
       );
     }
   };
+
+  const handleAgreeButtonClick = async () => {
+    setModalOpen(false);
+    getTestExamples();
+  }
+
+  const handleDisagreeButtonClick = () => {
+    setModalOpen(false);
+    setActiveTab('toggles');
+  }
 
   // Modal component
   const Modal = () => {
@@ -277,7 +303,7 @@ function App() {
           padding: '20px',
           borderRadius: '10px',
           width: '1000px',
-          height: '350px',
+          // height: '300px',
           maxWidth: '90%',
           maxHeight: '90%'
         }}>
@@ -294,23 +320,23 @@ function App() {
           provide insights into how language can manifest in harmful ways, aiding in identifying and 
           addressing toxicity effectively.
           </p>
+          <p>
+          By clicking "Agree", you acknowledge that you understand that you will be exposed to examples of toxic language.
+          </p>
           <div style={{
             display: 'flex',
-            justifyContent: 'flex-end',
-            marginTop: '20px'
+            justifyContent: 'center',
+            marginTop: '20px',
           }}>
-            <button 
-              onClick={() => setModalOpen(false)}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer'
-              }}
+            <button className="general"
+              onClick={() => handleAgreeButtonClick()}
             >
               Agree
+            </button>
+            <button className="disagree"
+              onClick={() => handleDisagreeButtonClick()}
+            >
+              Leave
             </button>
           </div>
         </div>
@@ -318,9 +344,9 @@ function App() {
     );
   };
 
-  useEffect(() => {
-    getTestExamples();
-  }, []);
+  // useEffect(() => {
+  //   getTestExamples();
+  // }, []);
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px' }}>
