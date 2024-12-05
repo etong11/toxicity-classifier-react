@@ -42,8 +42,12 @@ function App() {
   const setPreferences = async () => {
     try {
       setIsTraining(true);
+      var inputPreferences = rowStates;
+      if (activeTab === 'toggles') {
+        inputPreferences = toggleStates;
+      }
       const response = await axios.post('http://127.0.0.1:5000/setPreferences', {
-        preferences: toggleStates,
+        preferences: inputPreferences,
       });
       // const responseData = await response.json();
       const responseData = response.data;
@@ -152,18 +156,14 @@ function App() {
           <span className="label">{label}</span>
         </div>
       ))}
-      <button onClick={setPreferences}>Set Preferences</button>
       </div>
     )
   }
 
-  const renderTabContent = () => {
-    if (activeTab === 'toggles') {
-      return (
-        <div>
-          {isTraining && renderTrainingPopup()}
-          {renderToggleOnboarding()}
-          <div className="example-textbox">
+  const renderTextbox = () => {
+    return (
+      <div>
+      <div className="example-textbox">
             <textarea
               value={activeText}
               onChange={(e) => setActiveText(e.target.value)}
@@ -181,14 +181,34 @@ function App() {
             />
           </div>
           <button onClick={getPrediction}>Get Prediction</button>
-          <div className="prediction">
+        </div>
+    )
+  }
+
+  const renderPredictionOutput = () => {
+    return (
+    <div className="prediction">
             <h2>Prediction</h2>
             <p>{prediction}</p>
           </div>
+    )
+  }
+
+  const renderTabContent = () => {
+    if (activeTab === 'toggles') {
+      return (
+        <div>
+          {isTraining && renderTrainingPopup()}
+          {renderToggleOnboarding()}
+          <button onClick={setPreferences}>Set Preferences</button>
+          {renderTextbox()}
+          {renderPredictionOutput()}
         </div>
       );
     } else {
       return (
+        <div>
+        {isTraining && renderTrainingPopup()}
         <table className="toxicity-table">
           <thead>
             <tr>
@@ -212,6 +232,10 @@ function App() {
             ))}
           </tbody>
         </table>
+        <button onClick={setPreferences}>Set Preferences</button>
+        {renderTextbox()}
+        {renderPredictionOutput()}
+        </div>
       );
     }
   };
@@ -281,24 +305,6 @@ function App() {
 
   useEffect(() => {
     getTestExamples();
-    // const fetchData = async () => {
-    //   try {
-    //     const response = await fetch('http://127.0.0.1:5000/predict', {
-    //       method: 'POST',
-    //       headers: {
-    //         'Content-Type': 'application/json',
-    //       },
-    //       body: JSON.stringify({ data: "You suck!" })
-    //     });
-    //     const responseData = await response.json();
-    //     console.log(responseData);
-    //     setValue(responseData);
-    //   } catch (error) {
-    //     console.error('Error fetching data:', error);
-    //   }
-    // };
-
-    // fetchData();
   }, []);
 
   return (
