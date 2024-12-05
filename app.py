@@ -81,9 +81,11 @@ def getExamples():
         else:
             condition = (df[label] == 1) & (df[labels].sum(axis=1) == 1)
         examples[label] = df[condition]['comment_text']
-        sample = (examples[label]).sample()
+        sample = (examples[label]).sample().tolist()[0]
         samples.append(sample)
 
+    # print("these samples")
+    # print(samples)
     return jsonify({"examples": samples})
 
 if __name__ == "__main__":

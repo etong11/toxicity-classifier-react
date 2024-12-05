@@ -3,14 +3,14 @@ import './App.css';
 import axios from 'axios';
 
 const labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate'];
-const textExamples = [
-  'This is an example of toxic behavior.',
-  'This is an example of severe toxic behavior.',
-  'This is an example of obscene language.',
-  'This is an example of a threat.',
-  'This is an example of an insult.',
-  'This is an example of identity hate.',
-];
+// const textExamples = [
+//   'This is an example of toxic behavior.',
+//   'This is an example of severe toxic behavior.',
+//   'This is an example of obscene language.',
+//   'This is an example of a threat.',
+//   'This is an example of an insult.',
+//   'This is an example of identity hate.',
+// ];
 
 function App() {
   const [value, setValue] = useState("Sentence");
@@ -26,6 +26,18 @@ function App() {
   const [isOnboarding, setIsOnboarding] = useState<boolean>(true);
   const [prediction, setPrediction] = useState<string>('');
   const [isTraining, setIsTraining] = useState<boolean>(false);
+  const [textExamples, setExamples] = useState<string[]>([]);
+
+  const getTestExamples = async () => {
+    try {
+      const response = await axios.get('http://127.0.0.1:5000/getExamples');
+      const responseData = response.data;
+      console.log("responseData", responseData);
+      setExamples(responseData.examples);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  }
 
   const setPreferences = async () => {
     try {
@@ -268,24 +280,25 @@ function App() {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('http://127.0.0.1:5000/predict', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ data: "You suck!" })
-        });
-        const responseData = await response.json();
-        console.log(responseData);
-        setValue(responseData);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
+    getTestExamples();
+    // const fetchData = async () => {
+    //   try {
+    //     const response = await fetch('http://127.0.0.1:5000/predict', {
+    //       method: 'POST',
+    //       headers: {
+    //         'Content-Type': 'application/json',
+    //       },
+    //       body: JSON.stringify({ data: "You suck!" })
+    //     });
+    //     const responseData = await response.json();
+    //     console.log(responseData);
+    //     setValue(responseData);
+    //   } catch (error) {
+    //     console.error('Error fetching data:', error);
+    //   }
+    // };
 
-    fetchData();
+    // fetchData();
   }, []);
 
   return (
