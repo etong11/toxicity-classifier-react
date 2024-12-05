@@ -5,6 +5,8 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.svm import LinearSVC
+from sklearn.linear_model import LogisticRegression
 
 from sklearn.metrics import accuracy_score, cohen_kappa_score, f1_score, classification_report
 from sklearn.model_selection import GridSearchCV
@@ -41,7 +43,14 @@ def train():
     X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
 
     # Training the model
-    model = MultinomialNB().fit(X_train_tfidf, y)
+    # model = MultinomialNB().fit(X_train_tfidf, y)
+    # accuracy_score:  0.40510824998041317
+
+    model = LinearSVC().fit(X_train_tfidf, y)
+    # accuracy_score:  0.4877582199472461
+
+    # model = LogisticRegression(C=1.0, penalty='l2', max_iter=1000).fit(X_train_tfidf, y)
+    # accuracy_score:  0.47503982659110494
 
     # X_train_counts = count_vect.fit_transform(X)
     # X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
@@ -59,6 +68,7 @@ def train():
     # print("Error rate: ", error_rate)
     # print("classification_report: ", classification_report(y, predicted))
 
+#    # Testing the model
     # df_test = pd.read_csv('data/test.csv')
     # df_test_labels = pd.read_csv('data/test_labels.csv')
     # df_test['toxic_preference'] = 0
