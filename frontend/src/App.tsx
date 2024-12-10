@@ -3,13 +3,6 @@ import './App.css';
 import axios from 'axios';
 
 const labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate'];
-// const descriptions = ["General toxic behavior",
-//   "Severe toxic behavior",
-//   "Obscene language",
-//   "Threatening language",
-//   "Insulting language",
-//   "Identity-based hate speech"
-// ];
 
 function App() {
   const [value, setValue] = useState("Sentence");
@@ -48,7 +41,6 @@ function App() {
       const response = await axios.post('http://127.0.0.1:5000/setPreferences', {
         preferences: inputPreferences,
       });
-      // const responseData = await response.json();
       const responseData = response.data;
       console.log("setPreferences", responseData);
       setValue(responseData);
@@ -98,8 +90,6 @@ function App() {
           backgroundColor: 'white',
           padding: '20px',
           borderRadius: '10px',
-          // width: '1000px',
-          // height: '350px',
           maxWidth: '90%',
           maxHeight: '90%',
           textAlign: 'center'
@@ -118,6 +108,8 @@ function App() {
     setActiveTab(tab);
     setIsOnboarding(true);
     setPrediction('');
+    setActiveText('');
+    setExamples([]);
 
     if (tab === 'blank') {
       setModalOpen(true);
@@ -129,12 +121,6 @@ function App() {
     updatedToggles[index] = updatedToggles[index] === 0 ? 1 : 0;
     setToggleStates(updatedToggles);
     console.log(`Label: ${labels[index]}, Value: ${updatedToggles[index]}`);
-
-    // if (updatedToggles[index] === 1) {
-    //   setActiveText(textExamples[index]);
-    // } else if (activeText === textExamples[index]) {
-    //   setActiveText('');
-    // }
   };
 
   const handleRowToggleChange = (index: number) => {
@@ -157,7 +143,6 @@ function App() {
             <span className="slider"></span>
           </label>
           <span className="label">{label}</span>
-          {/* <span style={{ fontSize: '12px', color: '#666' }}>{descriptions[index]}</span> */}
         </div>
       ))}
       </div>
@@ -215,6 +200,33 @@ function App() {
     )
   }
 
+  const renderToxicityTable = () => {
+    return (
+      <table className="toxicity-table">
+          <thead>
+            <tr>
+              <th>Toxicity Label</th>
+              <th>Text Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            {labels.map((label, index) => (
+              <tr key={index}>
+                <td>
+                  <button
+                    onClick={() => handleRowToggleChange(index)}
+                    className={`row-toggle ${rowStates[index] === 1 ? 'active' : ''}`}
+                  >
+                    {label}
+                  </button>
+                </td>
+                <td>{textExamples[index]}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+    )};
+
   const renderTabContent = () => {
     if (activeTab === 'toggles') {
       return (
@@ -240,29 +252,7 @@ function App() {
           Examples of each category of toxic language from the dataset that the model will be trained on are shown below.
           Please select the types of toxic content you would like to not see.
         </p>
-        <table className="toxicity-table">
-          <thead>
-            <tr>
-              <th>Toxicity Label</th>
-              <th>Text Example</th>
-            </tr>
-          </thead>
-          <tbody>
-            {labels.map((label, index) => (
-              <tr key={index}>
-                <td>
-                  <button
-                    onClick={() => handleRowToggleChange(index)}
-                    className={`row-toggle ${rowStates[index] === 1 ? 'active' : ''}`}
-                  >
-                    {label}
-                  </button>
-                </td>
-                <td>{textExamples[index]}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {renderToxicityTable()}
         <button className="general" onClick={setPreferences}>Save Preferences</button>
         {renderTextbox()}
         {prediction != "" && renderPredictionOutput()}
@@ -281,7 +271,7 @@ function App() {
     setActiveTab('toggles');
   }
 
-  // Modal component
+  // Modal component for disclaimer
   const Modal = () => {
     if (!modalOpen) return null;
 
@@ -303,7 +293,6 @@ function App() {
           padding: '20px',
           borderRadius: '10px',
           width: '1000px',
-          // height: '300px',
           maxWidth: '90%',
           maxHeight: '90%'
         }}>
@@ -344,13 +333,8 @@ function App() {
     );
   };
 
-  // useEffect(() => {
-  //   getTestExamples();
-  // }, []);
-
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px' }}>
-      {/* Modal Component */}
       <Modal />
       {isTraining && renderTrainingPopup()}
       <div style={{ display: 'flex', marginBottom: '20px' }}>
