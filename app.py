@@ -13,8 +13,6 @@ from sklearn.model_selection import GridSearchCV
 
 app = Flask(__name__)
 CORS(app)
-# CORS(app, resources={r"/*": {"origins": "*"}})
-# CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 @app.route("/", methods=["GET"])
 def hello_world():
@@ -27,6 +25,7 @@ df['toxic_preference'] = 0
 y = None
 model = None
 preferences_num = None
+preferences = None
 
 count_vect = CountVectorizer()
 tfidf_transformer = TfidfTransformer()
@@ -36,66 +35,49 @@ def train():
     global model
     if y is None:
         return jsonify({"error": "Preferences not set yet"})
+    
+    if preferences == []:
+        return jsonify({"message": "No perferences, no model set"})
+    
     # Code on how to create text model from https://scikit-learn.org/1.4/tutorial/text_analytics/working_with_text_data.html
+    # Used the tutorial for text preprocessing but looked into different models
 
     # Preprocessing the comments
     X_train_counts = count_vect.fit_transform(X)
     X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
 
-    # Training the model
-    # model = MultinomialNB().fit(X_train_tfidf, y)
-    # accuracy_score:  0.40510824998041317
+    # Chose LinearSVC model due to highest accuracy when evaluating on models with different preference inputs
+    # model = LinearSVC().fit(X_train_tfidf, y)
 
-    model = LinearSVC().fit(X_train_tfidf, y)
-    # accuracy_score:  0.4877582199472461
 
-    # model = LogisticRegression(C=1.0, penalty='l2', max_iter=1000).fit(X_train_tfidf, y)
-    # accuracy_score:  0.47503982659110494
-
-    # X_train_counts = count_vect.fit_transform(X)
-    # X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
-
-    # # Hyperparameter tuning using Grid Search
+    # Hyperparameter tuning using Grid Search
     # param_grid = {
     #     'alpha': [0.01, 0.1, 1, 10, 100]
     # }
+    param_grid = {
+        'C': [0.01, 0.1, 1, 10, 100]
+    }
     # grid_search = GridSearchCV(MultinomialNB(), param_grid, cv=5, scoring='f1')
-    # grid_search.fit(X_train_tfidf, y)
-    # model = grid_search.best_estimator_
+    # Grid Search with LinearSVC
+    # grid_search = GridSearchCV(LinearSVC(), param_grid, cv=5, scoring='f1')
+    grid_search = GridSearchCV(LinearSVC(max_iter=2000), param_grid, cv=5, scoring='f1')  # Increase max_iter
+    grid_search.fit(X_train_tfidf, y)
+    model = grid_search.best_estimator_
 
-    # predicted = model.predict(X_train_tfidf)
-    # error_rate = (y != predicted).mean()
-    # print("Error rate: ", error_rate)
-    # print("classification_report: ", classification_report(y, predicted))
-
-#    # Testing the model
-    # df_test = pd.read_csv('data/test.csv')
-    # df_test_labels = pd.read_csv('data/test_labels.csv')
-    # df_test['toxic_preference'] = 0
-
-    # preferences_bool = [bool(preference) for preference in preferences_num]
-    # preferences = [labels[i] for i in range(len(labels)) if preferences_bool[i]]
-    # df_test['toxic_preference'] = df_test_labels[preferences].any(axis=1).astype(int)
-
-    # X_test = df_test['comment_text']
-    # y_test = df_test['toxic_preference']
-
-    # X_test_counts = count_vect.transform(X_test)
-    # X_test_tfidf = tfidf_transformer.transform(X_test_counts)
-    # predicted = model.predict(X_test_tfidf)
-
-    # error_rate = (y_test != predicted).mean()
-    # print("Error rate: ", error_rate)
-    # print("classification_report: ", classification_report(y_test, predicted))
-    # print("accuracy_score: ", accuracy_score(y_test, predicted))
+    # Training the model - other models used
+    # model = MultinomialNB().fit(X_train_tfidf, y)
+    # model = LogisticRegression(max_iter=1000).fit(X_train_tfidf, y)
 
     return jsonify({"message": "Model trained"})
-# , "error_rate": float(error_rate)
 
 @app.route("/predict", methods=["POST"])
 def predict():
     if model is None:
-        return jsonify({"error": "Model not trained yet"})
+        if preferences == []:
+            # User will see everything, nothing classified as toxic
+            return jsonify({"predicted": 0})
+        else:
+            return jsonify({"error": "Model not trained yet"})
     
     test_input = request.json['data']
     test_input = [test_input]
@@ -107,11 +89,9 @@ def predict():
 
     return jsonify({"predicted": int(predicted[0])})
 
-    # return jsonify({"shape": X.shape})
-
 @app.route("/setPreferences", methods=["POST"])
 def setPreferences():
-    global df, y, preferences_num
+    global df, y, preferences_num, preferences
     # Set the y value to match the preferences
     preferences_num = request.json['preferences']
 
@@ -120,7 +100,6 @@ def setPreferences():
     df['toxic_preference'] = df[preferences].any(axis=1).astype(int)
     y = df['toxic_preference']
 
-    # return jsonify({"message": "Preferences set"})
     return train()
 
 @app.route("/getExamples", methods=["GET"])
@@ -141,24 +120,34 @@ def getExamples():
     # print(samples)
     return jsonify({"examples": samples})
 
-# @app.route("/generateErrorRate", methods=["GET"])
-# def generateErrorRate():
-#     if model is None:
-#         return jsonify({"error": "Model not trained yet"})
-    
-#     df_test = pd.read_csv('data/test.csv')
-#     df_test_labels = pd.read_csv('data/test_labels.csv')
-    
-#     X_test = df_test['comment_text']
-#     y_test = df_test_labels['toxic']
+@app.route("/evaluate", methods=["GET"])
+def evaluate():
+    # Testing the model
+    if model is None:
+        if preferences == []:
+            # User will see everything, nothing classified as toxic
+            return jsonify({"accuracy": 0})
+        else:
+            return jsonify({"error": "Model not trained yet"})
+        
+    df_test = pd.read_csv('data/test.csv')
+    df_test_labels = pd.read_csv('data/test_labels.csv')
+    df_test['toxic_preference'] = 0
+    df_test['toxic_preference'] = df_test_labels[preferences].any(axis=1).astype(int)
 
-#     X_test_counts = count_vect.transform(X_test)
-#     X_test_tfidf = tfidf_transformer.transform(X_test_counts)
-#     predicted = clf.predict(X_test_tfidf)
+    X_test = df_test['comment_text']
+    y_test = df_test['toxic_preference']
 
-#     error_rate = (y_test != predicted).mean()
+    X_test_counts = count_vect.transform(X_test)
+    X_test_tfidf = tfidf_transformer.transform(X_test_counts)
+    predicted = model.predict(X_test_tfidf)
 
-#     return jsonify({"error_rate": error_rate})
+    # error_rate = (y_test != predicted).mean()
+    # print("Error rate: ", error_rate)
+    # print("classification_report: ", classification_report(y_test, predicted))
+    print("accuracy_score: ", accuracy_score(y_test, predicted))
+
+    return jsonify({"accuracy": accuracy_score(y_test, predicted)})
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -19,6 +19,7 @@ function App() {
   const [prediction, setPrediction] = useState<string>('');
   const [isTraining, setIsTraining] = useState<boolean>(false);
   const [textExamples, setExamples] = useState<string[]>([]);
+  const [accuracy, setAccuracy] = useState<number>(-1);
 
   const getTestExamples = async () => {
     try {
@@ -43,6 +44,12 @@ function App() {
       });
       const responseData = response.data;
       console.log("setPreferences", responseData);
+
+      const evalResponse = await axios.get('http://127.0.0.1:5000/evaluate');
+      const evalData = evalResponse.data;
+      console.log("evalData", evalData);
+      setAccuracy(evalData.accuracy);
+
       setValue(responseData);
       setIsOnboarding(false);
       setIsTraining(false);
@@ -110,6 +117,7 @@ function App() {
     setPrediction('');
     setActiveText('');
     setExamples([]);
+    setAccuracy(-1);
 
     if (tab === 'blank') {
       setModalOpen(true);
@@ -227,6 +235,14 @@ function App() {
         </table>
     )};
 
+  const renderAccuracy = () => {
+    return (
+      <div>
+        <p>The model built on your preferences has an accuracy of {accuracy*100}%. 
+          It may not accurately classify all your inputs, so use caution when using this model.</p>
+      </div>
+    )};
+
   const renderTabContent = () => {
     if (activeTab === 'toggles') {
       return (
@@ -237,6 +253,7 @@ function App() {
           </p>
           {renderToggleOnboarding()}
           <button className="general" onClick={setPreferences}>Save Preferences</button>
+          {(accuracy > -1) && renderAccuracy()}
           
           <hr style={{ margin: '20px 0' }} />
 
@@ -254,6 +271,7 @@ function App() {
         </p>
         {renderToxicityTable()}
         <button className="general" onClick={setPreferences}>Save Preferences</button>
+        {(accuracy > -1) && renderAccuracy()}
         {renderTextbox()}
         {prediction != "" && renderPredictionOutput()}
         </div>
