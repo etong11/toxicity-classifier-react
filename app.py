@@ -47,22 +47,7 @@ def train():
     X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
 
     # Chose LinearSVC model due to highest accuracy when evaluating on models with different preference inputs
-    # model = LinearSVC().fit(X_train_tfidf, y)
-
-
-    # Hyperparameter tuning using Grid Search
-    # param_grid = {
-    #     'alpha': [0.01, 0.1, 1, 10, 100]
-    # }
-    param_grid = {
-        'C': [0.01, 0.1, 1, 10, 100]
-    }
-    # grid_search = GridSearchCV(MultinomialNB(), param_grid, cv=5, scoring='f1')
-    # Grid Search with LinearSVC
-    # grid_search = GridSearchCV(LinearSVC(), param_grid, cv=5, scoring='f1')
-    grid_search = GridSearchCV(LinearSVC(max_iter=2000), param_grid, cv=5, scoring='f1')  # Increase max_iter
-    grid_search.fit(X_train_tfidf, y)
-    model = grid_search.best_estimator_
+    model = LinearSVC().fit(X_train_tfidf, y)
 
     # Training the model - other models used
     # model = MultinomialNB().fit(X_train_tfidf, y)
